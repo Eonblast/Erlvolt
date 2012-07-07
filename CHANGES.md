@@ -1,15 +1,21 @@
 %%%-------------------------------------------------------------------------%%%
 %%% File        : CHANGES                                                   %%%
-%%% Version     : 0.2.01/alpha                                              %%%
+%%% Version     : 0.3.00/alpha                                              %%%
 %%% Description : List of source code changes of Erlvolt                    %%%
 %%% Copyright   : VoltDB, LLC - http://www.voltdb.com                       %%%
 %%% Production  : Eonblast Corporation - http://www.eonblast.com            %%%
 %%% Author      : H. Diedrich - <hd2010@eonblast.com>                       %%%
 %%% License     : GPLv3 - see LICENSE                                       %%%
 %%% Created     : 12 May 2010                                               %%%
-%%% Changed     : 15 Jun 2010                                               %%%
+%%% Changed     : 07 Jul 2012                                               %%%
 %%%-------------------------------------------------------------------------%%%
 
+
+0.3.00  07 Jul 2012
+
+        + add: Makefiles
+        + alt: dir structure, moved tests into test/, erlunit stripped to etc/
+        + add: fixed error/1,2 ambiguity in erlunit
 
 0.2.01  15 Jun 2010
 

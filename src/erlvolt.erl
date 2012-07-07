@@ -1,13 +1,13 @@
 %%%-------------------------------------------------------------------------%%%
 %%% File        : erlvolt.erl                                               %%%
-%%% Version     : 0.2.01/alpha                                              %%%
+%%% Version     : 0.3.01/alpha                                              %%%
 %%% Description : Erlang-VoltDB client API                                  %%%
 %%% Copyright   : VoltDB, LLC - http://www.voltdb.com                       %%%
 %%% Production  : Eonblast Corporation - http://www.eonblast.com            %%%
 %%% Author      : H. Diedrich <hd2010@eonblast.com>                         %%%
 %%% License     : GPLv3                                                     %%%
 %%% Created     : 17 Apr 2010                                               %%%
-%%% Changed     : 14 Jun 2010                                               %%%
+%%% Changed     : 27 May 2012                                               %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
 %%%   Erlvolt is an Erlang interface to a VoltDB server. It allows for      %%%
@@ -21,19 +21,16 @@
 %%%                                                                         %%%
 %%%   STATUS                                                                %%%
 %%%                                                                         %%%
-%%%   All basic functionality is implemented and unit tested. Test pro-     %%%
-%%%   grams are being written to test usability. Function signatures are    %%%
-%%%   yet to change mildly. Asynchronous calls are not yet supported.       %%%
-%%%                                                                         %%%
+%%%   Bit rot. While still called version 0 the VoltDB protocol has         %%%                                                             %%%   evolved a lot and around a dozen changes were introduced since.       %%%
+%%%   This file is being revived. Asynchronous calls are not supported.     %%%                                                                         %%%                                                                         %%%
 %%%   REQUIREMENTS                                                          %%%
 %%%                                                                         %%%
-%%%   + VoltDB 1.0.01                                                       %%%
-%%%   + Tested on Java 1.6.0-17 and -19 (use 18+ for production!)           %%%
-%%%   + Tested on Erlang R13B01 and R13B03                                  %%%
+%%%   + VoltDB 2.5                                                          %%%
+%%%   + Tested on Java 1.6.0-24 (use 18+ for production.)                   %%%
+%%%   + Tested on Erlang R15B                                               %%%
 %%%                                                                         %%%
 %%%   TESTS                                                                 %%%
 %%%                                                                         %%%
-%%%   + Have at least Erlang R13B01                                         %%%
 %%%   + Get Erlunit from http://github.com/Eonblast/Erlunit/tarball/master  %%%
 %%%     and put it into subfolder erlunit, inside your Erlvolt folder.      %%%
 %%%   + From the OS command line run ./test                                 %%%
@@ -52,7 +49,7 @@
 %%%                                                                         %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
-%%%    Erlvolt 0.2.01/alpha - an Erlang-VoltDB client API.                  %%%
+%%%    Erlvolt 0.3.01/alpha - an Erlang-VoltDB client API.                  %%%
 %%%                                                                         %%%
 %%%    This file is part of VoltDB.                                         %%%
 %%%    Copyright (C) 2008-2010 VoltDB, LLC http://www.voltdb.com            %%%
@@ -93,12 +90,12 @@
 
 -module(erlvolt).
 
--vsn("0.2.01/alpha").
+-vsn("0.3.00/alpha").
 -author("H. Diedrich <hd2010@eonblast.com>").
 -license("MIT - http://www.opensource.org/licenses/mit-license.php").
 -copyright("(c) 2010 VoltDB, LLC - http://www.voltdb.com").
 
--define(VERSION, "0.2.01/alpha").
+-define(VERSION, "0.3.01/alpha").
 -define(LIBRARY, "Erlvolt").
 -define(EXPLAIN, "Erlang VoltDB Client API").
 
@@ -106,7 +103,7 @@
 
 %%%-------------------------------------------------------------------------%%%
 
--include("erlvolt.hrl").
+-include("../include/erlvolt.hrl").
 
 -import(lists, [reverse/1]).
 -import(ets).
@@ -1742,7 +1739,7 @@ listOrd(Searched, [ _ | Tail ], Count) ->
 
 %%%----------------------------------------------------------------------------
 %%% @doc Convert binaries, integers or floats to 'strings'.
-%%% @spec to_list( list() | binary() | integer() | float() ) -> list().
+%%% @spec to_list( list() | binary() | integer() | float() ) -> list()
 
 
 to_list(L) when is_list(L) -> L;
@@ -2150,7 +2147,7 @@ receiver(Connection, Handling) ->
 
 %%%----------------------------------------------------------------------------
 %%% @private Asynch Receiver Loop
-%%% @spec reiver_loop(connection()) -> nil()
+%%% @spec receiver_loop(connection(), handling()) -> nil()
 
 receiver_loop(Connection, Handling) ->
 
@@ -2195,17 +2192,16 @@ volt_invoke(ProcedureName, Parameters, ClientData) when is_binary(ClientData) ->
 %%%----------------------------------------------------------------------------
 
 %%%----------------------------------------------------------------------------
-%%% @ doc  Blocking Receive of one VoltDB wire binary response.
-%%% @ spec  receiveResponse(Connection::connection()) -> Response:erl_response().
+%%% @doc  Blocking Receive of one VoltDB wire binary response.
+%%% @spec receiveResponse(connection()) -> erl_response()
  
 receiveResponse(Connection) ->
 
 	receiveResponse(Connection, {}).
 
 %%%----------------------------------------------------------------------------
-%%% @ doc  Blocking Receive of one VoltDB wire binary response, with timeout.
-%%% @ spec  receiveResponse(Connection::connection(), TimeOut:integer()) ->
-%%% Response:erl_response().
+%%% @doc  Blocking Receive of one VoltDB wire binary response, with timeout.
+%%% @spec receiveResponse(connection(), integer()) -> erl_response()
 
 receiveResponse(Connection, nonblocking) ->
 	
@@ -2223,14 +2219,14 @@ receiveResponse(Connection, Hint) ->
 	receiveResponse(Connection, TimeOut, Hint).
 
 %%%----------------------------------------------------------------------------
-%%% @ doc  Non-Blocking Receive of one VoltDB wire binary response.
+%%% @doc  Non-Blocking Receive of one VoltDB wire binary response.
 
 receiveResponse(Connection, nonblocking, Hint) ->
 
 	receiveResponse(Connection, 0, Hint);
 
 %%%----------------------------------------------------------------------------
-%%% @ doc  Blocking Receive of one VoltDB wire binary response.
+%%% @doc  Blocking Receive of one VoltDB wire binary response.
 %%% set TimeOut to 0 for non-blocking. 
 
 receiveResponse(Connection, TimeOut, Hint) ->

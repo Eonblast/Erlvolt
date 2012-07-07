@@ -5,7 +5,7 @@
 
 -module(hello).
 -import(erlvolt).
--include("erlvolt.hrl").
+-include("include/erlvolt.hrl").
 
 -export([run/0]).
 

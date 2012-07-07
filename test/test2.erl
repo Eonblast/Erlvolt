@@ -4,7 +4,7 @@
 %%% Author      : H. Diedrich <hd2010@eonblast.com>                         %%%  
 %%% License     : GPLv3                                                     %%%  
 %%% Created     : 11 May 2010                                               %%%
-%%% Changed     : 11 Jun 2010                                               %%%
+%%% Changed     : 07 Jul 2012                                               %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
 %%%   This is a unit test program to test the Erlvolt module ervolt.erl.    %%%
@@ -21,7 +21,7 @@
 %%%                                                                         %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
-%%%    Erlvolt 0.2.01/alpha - an Erlang-VoltDB client API.                  %%%
+%%%    Erlvolt 0.3.00/alpha - an Erlang-VoltDB client API.                  %%%
 %%%                                                                         %%%
 %%%    This file is part of VoltDB.                                         %%%
 %%%    Copyright (C) 2008-2010 VoltDB, LLC http://www.voltdb.com            %%%
@@ -44,11 +44,11 @@
 
 
 -module(test2).
--include("erlvolt.hrl").
+-include("../include/erlvolt.hrl").
 -import(erlvolt).
 
 -import(erlunit). % http://github.com/Eonblast/Erlunit/tarball/master
--include("erlunit/erlunit.hrl").
+-include("../etc/erlunit/erlunit.hrl").
 
 -export([run/0]).
 -import(unicode).
