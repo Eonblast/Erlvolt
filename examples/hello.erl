@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------------%%%
-%%% File        : erlvolt.hrl                                               %%%
+%%% File        : examples/hello.erl                                        %%%
 %%% Version     : 0.3.0/beta                                                %%%
-%%% Description : Erlang VoltDB driver data structures and macros           %%%
+%%% Description : Erlang VoltDB driver minimal 'Hello, world!' example file %%%
 %%% Copyright   : VoltDB, LLC - http://www.voltdb.com                       %%%
 %%% Production  : Eonblast Corporation - http://www.eonblast.com            %%%
 %%% Author      : H. Diedrich <hd2012@eonblast.com>                         %%%
 %%% License     : MIT                                                       %%%
-%%% Created     : 13 Apr 2012                                               %%%
+%%% Created     : 28 Apr 2012                                               %%%
 %%% Changed     : 02 Feb 2013                                               %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
@@ -43,7 +43,7 @@
 %%%                                                                         %%%
 %%% USAGE                                                                   %%%
 %%%                                                                         %%%
-%%% You can run a sample using the 'Hello' tutorial-server discussed        %%%
+%%% You can run this sample using the 'Hello' tutorial-server discussed     %%%
 %%% in the VoltDB manual and present in every VoltDB distribution.          %%%
 %%%                                                                         %%%
 %%% Start that server from your voltdb installation with:                   %%%
@@ -51,20 +51,20 @@
 %%%     $ cd voltdb/doc/tutorial/helloworld                                 %%%
 %%%     $ ./run.sh                                                          %%%
 %%%                                                                         %%%
-%%% Then run the hello world example, using make from the driver root:      %%%
+%%% Then run this hello world example, using make from the driver root:     %%%
 %%%                                                                         %%%
-%%%     $ make hello                                                        %%%
+%%%     $ make hello-barebones # note the 'barebones'                       %%%
 %%% or                                                                      %%%
 %%%     $ make                                                              %%%
 %%%     $ cd examples                                                       %%%
-%%%     $ erlc -I ../include -o ../ebin +debug_info hello_plus.erl          %%%
-%%%     $ erl -pa ../ebin -s hello_plus run -s init stop -noshell           %%%
+%%%     $ erlc -I ../include -o ../ebin +debug_info hello.erl               %%%
+%%%     $ erl -pa ../ebin -s hello run -s init stop -noshell                %%%
 %%%                                                                         %%%
 %%% You will see this response, 'Hello, world!' in Swedish:                 %%%
 %%%                                                                         %%%
 %%%     Hej världen!                                                        %%%
 %%%                                                                         %%%
-%%% The hello world source is found in examples/hello_plus.erl              %%%
+%%% For a slightly more comples example see examples/hello_plus.erl.        %%%
 %%%                                                                         %%%
 %%%-------------------------------------------------------------------------%%%
 %%%                                                                         %%%
@@ -76,108 +76,55 @@
 %%%                                                                         %%%
 %%%-------------------------------------------------------------------------%%%
 
--define(ERLVOLT_OK, {result, {voltresponse, {0, _, 1, <<>>, 128, <<>>, <<>>, _}, []}}).
--define(ERLVOLT_ERROR_MESSAGE(T), {result,{voltresponse,{_,_,_,<<T>>,_,_,_,_},[]}}).
+-module(hello).
+-export([run/0]).
+-import(erlvolt).
+-include("erlvolt.hrl").
 
--record(pool, {
-    pool_id,                    %
-    size,
-    user,
-    password,
-    hosts,
-    service,
-    timeout,
-    queue_size,
-    slots,
-    nagle,
-    send_buffer,
-    receive_buffer,
-    send_timeout,
-    available = queue:new(),
-    waiting = queue:new()
-    }).
+-author("H. Diedrich <hd2010@eonblast.com>").
 
--record(erlvolt_connection, {
-    id,
-    pid,
-    pool_id,
-    slots,
-    nagle,
-    send_buffer,
-    receive_buffer,
-    send_timeout,
-    pending = 0,
-    alive = true
-    }).
+run() ->
 
--record(erlvolt_slot, {
-    id,
-    connection_id,
-    connection_pid,
-    pool_id,
-    granted = erlang:now(),
-    left = undefined,
-    sent = false,
-    pending = false,
-    done = false
-    }).
+    %%%
+    %%% Start driver
+    %%%
 
- -record(erlvolt_profile, {
-    p  = 0,
-    t0 = 0,
-    n  = 0,
-    c  = 0,
-    s  = 0,
-    e  = 0,
-    x  = 0,
-    al  = 0,
-    xl  = 0,
-    q  = 0,
-    ql  = 0
-    }).
+    crypto:start(),
+    application:start(erlvolt),
 
--define(TRACE(S), void).
--define(TRACE(F,S), void).
-%-define(TRACE(S), erlvolt:trace(S)).
-%-define(TRACE(F,S), erlvolt:trace(F,S)).
+    %%%
+    %%% Connect
+    %%%
 
--ifdef(profile).
+    erlvolt:add_pool(hello_pool, [{"localhost", 21212}]),
 
--define(ERLVOLT_PROFILER_COUNT_PENDING(), erlvolt_profiler:count_pending()).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(), erlvolt_profiler:count_success()).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(T), erlvolt_profiler:count_success(T)).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(), erlvolt_profiler:count_failure()).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(T), erlvolt_profiler:count_failure(T)).
--define(ERLVOLT_PROFILER_COUNT_QUEUED(), erlvolt_profiler:count_queued()).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(), erlvolt_profiler:count_unqueued()).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(T), erlvolt_profiler:count_unqueued(T)).
--define(ERLVOLT_PROFILER_DUMP(ClientID), erlvolt_profiler:dump(ClientID)).
--define(ERLVOLT_PROFILER_DUMP_FUNCTION, dump).
--define(ERLVOLT_PROFILER_PENDING(), erlvolt_profiler:pending()).
--define(ERLVOLT_PROFILER_QUEUED(), erlvolt_profiler:queued()).
--define(ERLVOLT_PROFILER_WAITQUEUED(N), erlvolt_profiler:waitqueued(N)).
--define(ERLVOLT_PROFILER_WAITPENDING(N), erlvolt_profiler:waitpending(N)).
--define(ERLVOLT_PROFILER_CR, "~n").
--define(ERLVOLT_PROFILER_NCR, "").
+    %%%
+    %%% Load sample data into the database
+    %%%
 
--else.
+    erlvolt:call_procedure(hello_pool, "Insert", ["Hej", "världen", "Swedish"]),
 
--define(ERLVOLT_PROFILER_COUNT_PENDING(), void).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(), void).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(T), void).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(), void).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(T), void).
--define(ERLVOLT_PROFILER_COUNT_QUEUED(), void).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(), void).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(T), void).
--define(ERLVOLT_PROFILER_DUMP(ClientID), void).
--define(ERLVOLT_PROFILER_DUMP_FUNCTION, dummy).
--define(ERLVOLT_PROFILER_PENDING(), void).
--define(ERLVOLT_PROFILER_QUEUED(), void).
--define(ERLVOLT_PROFILER_WAITQUEUED(N), void).
--define(ERLVOLT_PROFILER_WAITPENDING(N), void).
--define(ERLVOLT_PROFILER_CR, "").
--define(ERLVOLT_PROFILER_NCR, "~n").
+    %%%
+    %%% Query
+    %%%
 
--endif.
+    Result = erlvolt:call_procedure(hello_pool, "Select", ["Swedish"]),
+    %% note: the stored procedure is called 'Select'.
+
+    %%%
+    %%% Result
+    %%%
+
+    Table = erlvolt:get_table(Result, 1),
+    Row = erlvolt:get_row(Table, 1),
+    Hello = erlvolt:get_string(Row, Table, "HELLO"),
+    World = erlvolt:get_string(Row, Table, "WORLD"),
+
+    io:format("~n~s ~s!~n~n", [Hello, World]),
+
+    %%%
+    %%% Close
+    %%%
+
+    erlvolt:close_pool(hello_pool).
 

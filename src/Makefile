@@ -1,10 +1,8 @@
 include ../etc/include.mk
 
 all: $(EBIN_FILES)
-   
-debug:
-	$(MAKE) DEBUG=-DDEBUG
+
+fast: $(EBIN_FILES)
 
 clean:
 	@rm -rf $(EBIN_FILES)
-

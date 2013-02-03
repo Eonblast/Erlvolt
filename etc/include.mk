@@ -1,22 +1,24 @@
-## -*- makefile -*-
-
 ERL := erl
 ERLC := $(ERL)c
 
-INCLUDE_DIRS := ../include $(wildcard ../deps/*/include)
-EBIN_DIRS := $(wildcard ../deps/*/ebin)
+INCLUDE_DIRS ?= ../include $(wildcard ../deps/*/include)
+EBIN_DIRS ?= $(wildcard ../deps/*/ebin)
 ERLC_FLAGS := -W $(INCLUDE_DIRS:../%=-I ../%) $(EBIN_DIRS:%=-pa %)
 
-ifndef no_debug_info
+ifdef PROFILE
+  ERLC_FLAGS += -Dprofile
+endif
+
+ifdef DEBUG
   ERLC_FLAGS += +debug_info
 endif
 
-ifdef debug
-  ERLC_FLAGS += -Ddebug
+ifdef NATIVE
+  ERLC_FLAGS += +native -smp 
 endif
 
-EBIN_DIR := ../ebin
-DOC_DIR  := ../doc
+EBIN_DIR ?= ../ebin
+DOC_DIR  ?= ../doc
 EMULATOR := beam
 
 ERL_TEMPLATE := $(wildcard *.et)

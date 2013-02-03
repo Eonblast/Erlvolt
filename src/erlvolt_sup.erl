@@ -1,7 +1,7 @@
 %%%-------------------------------------------------------------------------%%%
-%%% File        : erlvolt.hrl                                               %%%
+%%% File        : erlvolt_conn.erl                                          %%%
 %%% Version     : 0.3.0/beta                                                %%%
-%%% Description : Erlang VoltDB driver data structures and macros           %%%
+%%% Description : Erlang VoltDB driver joint supervisor module              %%%
 %%% Copyright   : VoltDB, LLC - http://www.voltdb.com                       %%%
 %%% Production  : Eonblast Corporation - http://www.eonblast.com            %%%
 %%% Author      : H. Diedrich <hd2012@eonblast.com>                         %%%
@@ -76,108 +76,82 @@
 %%%                                                                         %%%
 %%%-------------------------------------------------------------------------%%%
 
--define(ERLVOLT_OK, {result, {voltresponse, {0, _, 1, <<>>, 128, <<>>, <<>>, _}, []}}).
--define(ERLVOLT_ERROR_MESSAGE(T), {result,{voltresponse,{_,_,_,<<T>>,_,_,_,_},[]}}).
+-module(erlvolt_sup).
+-behaviour(supervisor).
 
--record(pool, {
-    pool_id,                    %
-    size,
-    user,
-    password,
-    hosts,
-    service,
-    timeout,
-    queue_size,
-    slots,
-    nagle,
-    send_buffer,
-    receive_buffer,
-    send_timeout,
-    available = queue:new(),
-    waiting = queue:new()
-    }).
+-vsn("0.3.0/beta").
+-author("H. Diedrich <hd2012@eonblast.com>").
+-license("MIT - http://www.opensource.org/licenses/mit-license.php").
+-copyright("(c) 2010-12 VoltDB, LLC - http://www.voltdb.com").
 
--record(erlvolt_connection, {
-    id,
-    pid,
-    pool_id,
-    slots,
-    nagle,
-    send_buffer,
-    receive_buffer,
-    send_timeout,
-    pending = 0,
-    alive = true
-    }).
+-define(VERSION, "0.3.0/beta").
+-define(LIBRARY, "Erlvolt").
+-define(EXPLAIN, "Erlang VoltDB driver").
 
--record(erlvolt_slot, {
-    id,
-    connection_id,
-    connection_pid,
-    pool_id,
-    granted = erlang:now(),
-    left = undefined,
-    sent = false,
-    pending = false,
-    done = false
-    }).
+-export([start_link/0, init/1]).
 
- -record(erlvolt_profile, {
-    p  = 0,
-    t0 = 0,
-    n  = 0,
-    c  = 0,
-    s  = 0,
-    e  = 0,
-    x  = 0,
-    al  = 0,
-    xl  = 0,
-    q  = 0,
-    ql  = 0
-    }).
+%%% @spec start_link() -> ignore | {error,any()} | {ok,pid()}
+start_link() ->                      % called by erlvolt_app:start/2
+    erlvolt:trace("#2   erlvolt_sup:start_link/0"),
+    supervisor:start_link({local, erlvolt_sup_profiler}, ?MODULE, erlvolt_sup_profiler),
+    erlvolt_profiler:test(),
+    supervisor:start_link({local, erlvolt_sup_conn_mgr}, ?MODULE, erlvolt_sup_conn_mgr),
+    erlvolt_conn_mgr:test(),
+    supervisor:start_link({local, erlvolt_sup_conn}, ?MODULE, erlvolt_sup_conn).
 
--define(TRACE(S), void).
--define(TRACE(F,S), void).
-%-define(TRACE(S), erlvolt:trace(S)).
-%-define(TRACE(F,S), erlvolt:trace(F,S)).
 
--ifdef(profile).
+%:% init must return the supervisor spec and nested into it, the child spec(s).
+%%% Supervisor of the global connection manager
+%%% @spec init('erlvolt_sup_conn' | 'erlvolt_sup_conn_mgr') -> {'ok',{{'one_for_one',integer(),integer()} | {'simple_one_for_one',integer(),integer()},[any(),...]}}
+init(erlvolt_sup_conn_mgr) ->
+    erlvolt:trace("#2a  erlvolt_sup:init(erlvolt_conn_mgr)"),
+    {ok, {{one_for_one, 10, 10}, [
+        % Spec of the /one/ Connection Slot Manager
+        { erlvolt_conn_mgr,
+          {erlvolt_conn_mgr, start_link, []},
+          permanent,
+          5000,
+          worker,
+          [erlvolt_conn_mgr]}
+    ]}};
 
--define(ERLVOLT_PROFILER_COUNT_PENDING(), erlvolt_profiler:count_pending()).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(), erlvolt_profiler:count_success()).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(T), erlvolt_profiler:count_success(T)).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(), erlvolt_profiler:count_failure()).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(T), erlvolt_profiler:count_failure(T)).
--define(ERLVOLT_PROFILER_COUNT_QUEUED(), erlvolt_profiler:count_queued()).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(), erlvolt_profiler:count_unqueued()).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(T), erlvolt_profiler:count_unqueued(T)).
--define(ERLVOLT_PROFILER_DUMP(ClientID), erlvolt_profiler:dump(ClientID)).
--define(ERLVOLT_PROFILER_DUMP_FUNCTION, dump).
--define(ERLVOLT_PROFILER_PENDING(), erlvolt_profiler:pending()).
--define(ERLVOLT_PROFILER_QUEUED(), erlvolt_profiler:queued()).
--define(ERLVOLT_PROFILER_WAITQUEUED(N), erlvolt_profiler:waitqueued(N)).
--define(ERLVOLT_PROFILER_WAITPENDING(N), erlvolt_profiler:waitpending(N)).
--define(ERLVOLT_PROFILER_CR, "~n").
--define(ERLVOLT_PROFILER_NCR, "").
+%%% Supervisor of the individual connection send/receive workers
+init(erlvolt_sup_conn) ->
+    erlvolt:trace("#2b  erlvolt_sup:init(erlvolt_sup_conn)"),
+    {ok, {{simple_one_for_one, 10, 10}, [
+        % Spec of the /many, dynamic/ socket controlling Connection main loops
+        { erlvolt_conn,
+          {erlvolt_conn, start_link, []},
+          transient,
+          5000,
+          worker,
+          [erlvolt_conn]}
+    ]}};
 
--else.
+%:% init must return the supervisor spec and nested into it, the child spec(s).
+%%% Supervisor of the global connection manager
+%%% @spec init('erlvolt_sup_conn' | 'erlvolt_sup_conn_mgr') -> {'ok',{{'one_for_one',integer(),integer()} | {'simple_one_for_one',integer(),integer()},[any(),...]}}
+init(erlvolt_sup_profiler) ->
+    erlvolt:trace("#2c  erlvolt_sup:init(erlvolt_profiler)"),
+    {ok, {{one_for_one, 10, 10}, [
+        % Spec of the /one/ Profiler
+        { erlvolt_profiler,
+          {erlvolt_profiler, start_link, []},
+          permanent,
+          5000,
+          worker,
+          [erlvolt_profiler]}
+    ]}}.
 
--define(ERLVOLT_PROFILER_COUNT_PENDING(), void).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(), void).
--define(ERLVOLT_PROFILER_COUNT_SUCCESS(T), void).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(), void).
--define(ERLVOLT_PROFILER_COUNT_FAILURE(T), void).
--define(ERLVOLT_PROFILER_COUNT_QUEUED(), void).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(), void).
--define(ERLVOLT_PROFILER_COUNT_UNQUEUED(T), void).
--define(ERLVOLT_PROFILER_DUMP(ClientID), void).
--define(ERLVOLT_PROFILER_DUMP_FUNCTION, dummy).
--define(ERLVOLT_PROFILER_PENDING(), void).
--define(ERLVOLT_PROFILER_QUEUED(), void).
--define(ERLVOLT_PROFILER_WAITQUEUED(N), void).
--define(ERLVOLT_PROFILER_WAITPENDING(N), void).
--define(ERLVOLT_PROFILER_CR, "").
--define(ERLVOLT_PROFILER_NCR, "~n").
 
--endif.
-
+%:% Child Spec:
+%:% {Id, StartFunc, Restart, Shutdown, Type, Modules}
+%:%     Id = term()
+%:%     StartFunc = {M, F, A}
+%:%         M = F = atom()
+%:%         A = [term()]
+%:%     Restart = permanent | transient | temporary
+%:%     Shutdown = brutal_kill | integer()>0 | infinity
+%:%     Type = worker | supervisor
+%:%     Modules = [Module] | dynamic
+%:%     Module = atom()
