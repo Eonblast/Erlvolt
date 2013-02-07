@@ -91,13 +91,16 @@
 -export([start_link/0, init/1, handle_call/3, handle_cast/2, handle_info/2]).
 -export([terminate/2, code_change/3]).
 
--export([test/0, add_pool/1, drain_pool/2, close_pool/3, pools/0,
+-export([test/0,
+        pools/0, add_pool/1, drain_pool/2,
+        close_pools/0, close_pools/2, close_pool/3,
         add_connections/2,
         get_connections/1, get_connection/1,
         get_slot/1, get_slot_blocking/2, create_slot_warrant/1,
         pass_slot/1, replace_connection/2]).
 
--include("../include/erlvolt.hrl").
+-include("erlvolt.hrl").
+-include("erlvolt_internal.hrl").
 
 -record(state, {pools}).
 
@@ -142,6 +145,14 @@ close_pool(PoolId, DrainWait, CloseWait) ->
         R -> R
     end.
 
+%% @spec close_pools() -> list()
+close_pools() ->
+    close_pools(500, 1000).
+
+%% @spec close_pools(integer(), integer()) -> list()
+close_pools(DrainWait, CloseWait) ->
+    [ close_pool(Pool#pool.pool_id, DrainWait, CloseWait) || Pool <- pools() ].
+
 %% @spec add_connections(any(),maybe_improper_list()) -> any()
 add_connections(PoolId, Conns) when is_list(Conns) ->
     call({add_connections, PoolId, Conns}).
@@ -167,22 +178,22 @@ get_slot(PoolId)->
 %% @spec get_slot_blocking(any()) -> any()
 get_slot_blocking(PoolId, QueueTimeout)->
     ?TRACE("#11   erlvolt_conn_mgr:get_slot_blocking/1"),
-    
+    %-% io:format("~p waits for slot to pool ~p~n", [self(), PoolId]),
     case call({get_slot_or_queue, PoolId}) of
         queued ->
-            
+            %-% io:format("~p is queued~n", [self()]),
             ?ERLVOLT_PROFILER_COUNT_QUEUED(),
             QueueTime = now(),
             ?TRACE("~p is queued", [self()]),
             receive
                 {slot,Slot} when is_record(Slot, erlvolt_slot) ->
-                    
+                    %-% io:format("~p gets a slot after waiting in queue~n", [self()]),
                     _T = timer:now_diff(now(), QueueTime),
                     ?TRACE("~p gets a slot after waiting (~s)µs in queue", [self(),erlvolt_profiler:ts(_T)]),
                     ?ERLVOLT_PROFILER_COUNT_UNQUEUED(_T),
                     Slot;
                 Other ->
-                    
+                    %-% io:format("~p gets a slot after waiting in queue~n", [self()]),
                     ?TRACE("~p gets something other than a slot while waiting in queue: ~w", [self(), _Other]),
                     _T = timer:now_diff(now(), QueueTime),
                     ?ERLVOLT_PROFILER_COUNT_UNQUEUED(_T),
@@ -190,7 +201,7 @@ get_slot_blocking(PoolId, QueueTimeout)->
                     ?ERLVOLT_PROFILER_COUNT_FAILURE(),
                     exit({undue_message_received, Other})
                 after QueueTimeout ->
-                    
+                    %-% io:format("~p gets no connection and times out -> probably EXIT~n~n", [self()]),
                     ?TRACE("~p gets no connection and times out after ~sµs-> probably EXIT", [self(),erlvolt_profiler:ts(T)]),
                         _T = timer:now_diff(now(), QueueTime),
                     ?ERLVOLT_PROFILER_COUNT_UNQUEUED(_T),
@@ -201,13 +212,13 @@ get_slot_blocking(PoolId, QueueTimeout)->
                     % message might be sent after timeout was initiated.
                     receive
                         {slot,Slot} when is_record(Slot, erlvolt_slot) ->
-                             
+                             %-% io:format("~p gets a slot last minute after waiting in queue~n", [self()]),
                             _T2 = timer:now_diff(now(), QueueTime),
                             ?TRACE("~p gets a slot last minute after waiting (~s)µs in queue", [self(),erlvolt_profiler:ts(_T)]),
                             ?ERLVOLT_PROFILER_COUNT_UNQUEUED(_T2),
                             Slot;
                         _Other ->
-                            
+                            %-% io:format("~p gets a slot after waiting in queue~n", [self()]),
                             ?TRACE("~p gets something other than a slot AFTER waiting in queue: ~w", [self(), _Other]),
                             _T2 = timer:now_diff(now(), QueueTime),
                             ?ERLVOLT_PROFILER_COUNT_UNQUEUED(_T2),
@@ -227,10 +238,10 @@ get_slot_blocking(PoolId, QueueTimeout)->
             ?ERLVOLT_PROFILER_COUNT_FAILURE(),
             queue_full;
         {error, What} ->
-            
+            %-% io:format("~p hits error ~p~n", [self(), What]),
             {error, What};
         Slot ->
-            
+            %-% io:format("~p gets connection~n", [self()]),
             Slot
     end.
 
@@ -266,7 +277,7 @@ call(Msg) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 %% @spec init([]) -> {'ok',#state{}}
-init([]) -> % 
+init([]) -> % TODO?
     ?TRACE("#3a  erlvolt_conn_mgr:init/1"),
     {ok, #state{pools=[]}}.
 
@@ -336,7 +347,7 @@ handle_call({add_connections, PoolId, Conns}, _From, State) ->
 handle_call({get_connection, PoolId}, _From, State) ->
     case extract_pool(PoolId, State#state.pools) of
         {Pool, _OtherPools} ->
-            {{value, C},_} = queue:out(Pool#pool.available), % 
+            {{value, C},_} = queue:out(Pool#pool.available), % TODO this is a hack to test speed
             {reply, C, State};
         missing ->
             {reply, {error, pool_not_found}, State}
@@ -353,7 +364,7 @@ handle_call({get_connections, PoolId}, _From, State) ->
 %% find the next available connection in the pool identified by PoolId
 %% returns slot() | unavailable | {error, pool_not_found}
 handle_call({get_slot, PoolId}, {_From, _Mref}, State) ->
-    
+    %-% io:format("gen srv: get slot for pool ~p~n", [PoolId]),
     case find_free_slot(State, PoolId) of
         {Slot, State1} when is_record(Slot, erlvolt_slot) ->
             {reply, Slot, State1};
@@ -430,7 +441,7 @@ handle_call({pass_slot, Slot}, _From, State) ->
                             State1 = State#state{ pools = [Pool1|OtherPools] },
                             {reply, ok, State1};
                         missing ->
-                            % 
+                            % TODO: this is not handled anywhere. Write into State? Even Exit?
                             {reply, connection_not_found, State}
                     end;
 
@@ -557,22 +568,22 @@ find_free_slot(Pool) when is_record(Pool, pool) ->
 %% @private round robin connection search through the pool for an alive connection with a free slot.
 %% @spec find_free_slot_round_robin(queue(),queue()) -> {'unavailable' | #erlvolt_slot{}, queue()}
 find_free_slot_round_robin(Next, Seen) ->
-    
-    
+    %-% io:format("gen srv: get next alive connection with a free slot ...~n", []),
+    %-% io:format("gen srv: ~p Pool ~p Connections: ~p~n", [self(), PoolId, queue:len(Pool#pool.available)]),
     case queue:out(Next) of
         {{value, Conn}, Unseen} ->
-            case Conn#erlvolt_connection.alive and % 
+            case Conn#erlvolt_connection.alive and % TODO: double check flag with true state for tests
                  (Conn#erlvolt_connection.pending < Conn#erlvolt_connection.slots) of
                 true ->
                     % ok: found a connection that has open slots
-                    
+                    %-% io:format("gen srv: ... found alive connection ~p that has open slots~n", [Conn#erlvolt_connection.id]),
                     Slot = create_slot_warrant(Conn),
                     Conn1 = Conn#erlvolt_connection{ pending = Conn#erlvolt_connection.pending + 1},
                     ConnQ = queue:in(Conn1, queue:join(Unseen, Seen)),
                     {Slot, ConnQ};
                 _ ->
                     % full / dead
-                    
+                    %-% io:format("gen srv: connection ~p is full or dead ~n", [Conn]),
                     find_free_slot_round_robin(Unseen, queue:in(Conn, Seen))
             end;
         {empty, _} ->

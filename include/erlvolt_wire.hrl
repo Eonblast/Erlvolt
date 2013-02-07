@@ -62,7 +62,7 @@
 %%%                                                                         %%%
 %%% You will see this response, 'Hello, world!' in Swedish:                 %%%
 %%%                                                                         %%%
-%%%     Hej vŠrlden!                                                        %%%
+%%%     Hej vÃ¤rlden!                                                        %%%
 %%%                                                                         %%%
 %%% The hello world source is found in examples/hello_plus.erl              %%%
 %%%                                                                         %%%
@@ -126,7 +126,7 @@
 % There are many bit patterns that are NaN, meaning, they don't have a
 % meaningful value as float numbers. But again, Java defines one as 'the' NaN.
 
-%  Home » Open-JDK-6.b17-src  » java » lang  » source
+%  Home Âª Open-JDK-6.b17-src  Âª java Âª lang  Âª source
 %  ...
 %  48    * @since JDK1.0
 %  49    */
@@ -250,9 +250,9 @@
 
 -define(VOLT_TINYINT_WIRE_BYTES,   1).
 -define(VOLT_SMALLINT_WIRE_BYTES,  2).
--define(VOLT_SHORTINT_WIRE_BYTES,  2). % 
+-define(VOLT_SHORTINT_WIRE_BYTES,  2). % TODO: unify 'short' and 'small'
 -define(VOLT_INTEGER_WIRE_BYTES,   4).
--define(VOLT_INTINT_WIRE_BYTES,    4). % 
+-define(VOLT_INTINT_WIRE_BYTES,    4). % TODO: make 'integer' consistent
 -define(VOLT_BIGINT_WIRE_BYTES,    8).
 -define(VOLT_FLOAT_WIRE_BYTES,     4).
 -define(VOLT_TIMESTAMP_WIRE_BYTES, 8).
@@ -264,28 +264,4 @@
 -define(VOLT_TIMESTAMP_BINARY,  8/binary).
 -define(VOLT_DECIMAL_BINARY,   16/binary).
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%----------------------------------------------------------------------------
-%%% Procedure Call Status Code
-%%%----------------------------------------------------------------------------
-
-% A Byte value specifying the success or failure of a remote stored procedure call.
-% * SUCCESS            =  1
-% * USER_ABORT         = -1
-% * GRACEFUL_FAILURE   = -2
-% * UNEXPECTED_FAILURE = -3
-% * CONNECTION_LOST    = -4
-
-%%%----------------------------------------------------------------------------
-
--define(VOLT_SUCCESS,             1).
--define(VOLT_USER_ABORT,         -1).
--define(VOLT_GRACEFUL_FAILURE,   -2).
--define(VOLT_UNEXPECTED_FAILURE, -3).
--define(VOLT_CONNECTION_LOST,    -4).
-
-
-%%%-----------------------------------°%°-----------------------------------%%%
+%%%------------------------------------%------------------------------------%%%
