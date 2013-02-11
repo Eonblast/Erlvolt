@@ -251,7 +251,7 @@ add_pool(PoolId, Hosts, Opts) ->
         receive_buffer = proplists:get_value(receive_buffer, Opts, 100000),
         send_timeout = proplists:get_value(send_timeout, Opts, 10000)
     },
-    % TODO: should this happen inside the gen server, in add_pool/1?
+    % 
     Blocking = case proplists:get_value(blocking, Opts, true) of true -> blocking; _ -> nonblocking end,
     case erlvolt_conn:open_connections(Pool, Blocking) of
         OpenedPool when is_record(OpenedPool, pool) ->
@@ -264,12 +264,12 @@ add_pool(PoolId, Hosts, Opts) ->
                     exit({What,Why});
                 What:Why ->
                     erlvolt:error("Could not add pool to connection manager state: ~p.~n~p.", [What,Why], notrace),
-                    % TODO close successfully opened connections?
+                    % 
                     exit({What,Why})
             end;
         Error ->
             erlvolt:error("Could not create connection pool:~n~p.", [Error], notrace),
-            % TODO close successfully opened connections?
+            % 
             throw({connection_failed, Error})
     end.
 
@@ -628,13 +628,13 @@ call_procedure_monitored(Slot, Proc, Param, Sync, Care, SendTimeout, ReceiveTime
     %% those are two steps. the response from the server
     %% is expected within milliseconds usually.
     Return = receive
-        {'DOWN', Mref, process, WPid, {_, closed}} -> % TODO
+        {'DOWN', Mref, process, WPid, {_, closed}} -> % 
             exit(not_implemented_1);
 
         {'DOWN', Mref, process, WPid, normal} ->
             ?TRACE("#20 call_procedure_monitored: DOWN normal -> exit~n", []);
 
-        {'DOWN', Mref, process, WPid, _Reason} -> % TODO
+        {'DOWN', Mref, process, WPid, _Reason} -> % 
             ?TRACE("call_procedure_monitored: DOWN ~p -> exit~n", [_Reason]),
             exit({not_implemented_1B,_Reason});
 
@@ -663,7 +663,7 @@ call_procedure_monitored(Slot, Proc, Param, Sync, Care, SendTimeout, ReceiveTime
             ?TRACE("call_procedure_monitored: got result -> demonitor ~w, unlock connection ~w slot ~w, return result", [Mref, Slot#erlvolt_slot.connection_id, Slot#erlvolt_slot.id]),
             erlang:demonitor(Mref, [flush]),
             erlvolt_conn_mgr:pass_slot(Slot),
-            %-% io:format("Result: ~p~n", [Result]),
+            
             Result
 
         after ReceiveTimeout ->

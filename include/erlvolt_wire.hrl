@@ -250,9 +250,9 @@
 
 -define(VOLT_TINYINT_WIRE_BYTES,   1).
 -define(VOLT_SMALLINT_WIRE_BYTES,  2).
--define(VOLT_SHORTINT_WIRE_BYTES,  2). % TODO: unify 'short' and 'small'
+-define(VOLT_SHORTINT_WIRE_BYTES,  2). % 
 -define(VOLT_INTEGER_WIRE_BYTES,   4).
--define(VOLT_INTINT_WIRE_BYTES,    4). % TODO: make 'integer' consistent
+-define(VOLT_INTINT_WIRE_BYTES,    4). % 
 -define(VOLT_BIGINT_WIRE_BYTES,    8).
 -define(VOLT_FLOAT_WIRE_BYTES,     4).
 -define(VOLT_TIMESTAMP_WIRE_BYTES, 8).

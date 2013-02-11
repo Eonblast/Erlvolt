@@ -562,7 +562,7 @@ wait_done(C) ->
 
 -ifdef(profile).
 drain(CallTarget) ->
-    receipts(CallTarget,0,0). %%% TODO: WAITPENDING, WAITQUEUED instead? Performance hit?
+    receipts(CallTarget,0,0). %%% 
 -else.
 drain(CallTarget) ->
     receipts(CallTarget,0,0).

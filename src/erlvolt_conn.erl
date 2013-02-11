@@ -135,7 +135,7 @@ start_link(Args) ->
 
 %% @private Establish the server connection and enter the permanent socket service loop.
 %% This function is the entry function of a new connection handler process, created by
-%% erlvolt_conn:start_link/1, above. %TODO specs
+%% erlvolt_conn:start_link/1, above. %
 start_connection(PoolId, ConnId, Host, Port, User, Password, Database, Nagle, SendBuffer, ReceiveBuffer, SendTimeout, BlockingOpen, BlockedPid) ->
 
     ?TRACE("#7a  erlvolt_conn:start_connection/6"),
@@ -242,13 +242,13 @@ tx_loop({PoolId, ConnId, Socket, Drainer, DrainWait, Proceed, Overhead}=Anchor,{
         {tcp_closed, Socket} ->
 
             ?TRACE("~p Socket closed~n", [self()]),
-            % TODO tell waiting processes of loss. Restart.
+            % 
             exit(erlvolt_socket_lost);
 
         {tcp_error, Socket, Reason} ->
 
             io:format("~p Socket error ~p~n", [self(), Reason]);
-            % TODO what?
+            % 
 
         {dump} ->
             io:format("Connection Receiver ~p alive.~n", [self()]),
@@ -324,7 +324,7 @@ dispatch(Result, Overhead) ->
     %% This can go through to the caller of execute().
     %% *||*******************************************
     %% But the Pid could also be a waiting worker.
-    %-% io:format("~p sends to ~p result ~p~n~n", [self(), Pid, Result]),
+    
     Pid ! {result, Result}.
 
 %% Open all connections of a pool.
@@ -362,7 +362,7 @@ open_connections(Pool, Blocking, [{Host,Port}|MoreHosts]) ->
 %% @spec open_connection(#pool{},any(),any()) -> #erlvolt_connection{}
 open_connection(#pool{pool_id=PoolId, user=User, password=Password, service=Database, slots=Slots, nagle=Nagle, send_buffer=SendBuffer, receive_buffer=ReceiveBuffer, send_timeout=SendTimeout}, Host, Port, Blocking) ->
     ?TRACE("#6   erlvolt_conn:open_connection/3"),
-    %-% io:format("~p open connection for pool ~p hosts ~p user ~p base ~p~n", [self(), PoolId, Hosts, User, Database]),
+    
     ConnId = erlang:now(), % guaranteed to be unique in this VM
     case supervisor:start_child(erlvolt_sup_conn, [[PoolId, ConnId, Host, Port, User, Password, Database, Nagle, SendBuffer, ReceiveBuffer, SendTimeout, Blocking, self()]]) of
         {ok, Pid} ->
@@ -430,10 +430,10 @@ close_connection(Conn, DrainWait, CloseWait) ->
             R
         after CloseWait ->
             connection_close_timeout
-            % TODO might kill the conn processes that loose addressee for when done
+            % 
     end.
 
-%% TODO implement handling of processes that wait for a connection the
+%% 
 %% moment that the pool is shut down. This is pretty much taken care of
 %% by the timeout in the send loop that must be passed before the closing
 %% happens, but will not while the queue keeps filling up any empty
@@ -564,7 +564,7 @@ decode_pid(<<PidBin:8/binary>>, KnownOverhead) ->
         Pid when is_pid(Pid) ->
             Pid;
         _ ->
-            %-% erlvolt:error("Could not convert to pid: ~p (~p)", [Bin, Term]),
+            
             exit(erlvolt_pid_decode_failure)
     end.
 

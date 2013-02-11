@@ -77,7 +77,7 @@
 ###-------------------------------------------------------------------------###
 
 LIBDIR=$(shell erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell)
-VERSION=0.3.2
+VERSION=0.3.3
 PKGNAME=erlvolt
 APP_NAME=erlvolt
 
@@ -237,21 +237,8 @@ html:
 # Building and Deployment
 #
 
-set:
-	etc/replace 0\\.3\\.1 0\\.3\\.2
-
 # clean and doc creation for release, any branch 
 release: clean html
-
-# clean for master branch
-master: release
-	etc/replace %-%.* ""
-	etc/replace TODO.*$ ""
-	rm -f doc/edoc-info
-	rm -f doc/erlang.png
-	rm -f doc/erlvolt-footer.png
-	rm -f doc/erlvolt-style.css
-	rm -f doc/stylesheet.css
 
 clean:
 	@echo clean
@@ -300,9 +287,6 @@ package: clean
 	@COPYFILE_DISABLE=true tar zcf $(PKGNAME)-$(VERSION).tgz $(PKGNAME)-$(VERSION)
 	@rm -rf $(PKGNAME)-$(VERSION)/
 
-install: all
-	@for i in ebin/*.beam ebin/*.app include/*.hrl src/*.erl; do install -m 644 -D $$i $(prefix)/$(LIBDIR)/$(PKGNAME)-$(VERSION)/$$i ; done
-
 #
 # Unit Tests
 #
@@ -316,11 +300,6 @@ test: all
 
 include etc/test/dialyzer.mk
 
-#
-# Tests of Makes
-#
-
-include etc/test/maketest.mk
 
 #
 # Make Help
@@ -372,17 +351,10 @@ help:
 	# release building
 	# ----------------
 	# release: Clean and doc creation for release, any branch 
-	# master: Clean for master branch, deletes diverse number of files
 	# package: make zipped tarball
 	#
 	# source tests
 	# ------------
 	# test: run Common Tests (unit tests)
 	# dialyzer: run dialyzer source tests
-	#
-	# make rule tests
-	# ---------------
-	# maketest-hello: run sequences of make files for VoltDB 3+ Hello World sample database
-	# maketest-hello-pre3: run sequences of make files for pre VoltDB 3.0 Hello World database
-	# maketest-voter: run sequences of make files for Voter sample database
 	@echo

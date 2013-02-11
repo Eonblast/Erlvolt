@@ -1,7 +1,7 @@
-voltdb-client-erlang Erlvolt 0.3.2/beta
+voltdb-client-erlang Erlvolt 0.3.3/beta
 =======================================
 
-**Release: 'Erlvolt 0.3.2/beta'**  
+**Release: 'Erlvolt 0.3.3/beta'**  
 **Author: H. Diedrich**  
 **Production: Eonblast Corporation**  
 **Copyright: (c) 2013 VoltDB, Inc**  
